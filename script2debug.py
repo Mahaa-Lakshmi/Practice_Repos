@@ -3,10 +3,9 @@ import os
 import mysql.connector
 from concurrent.futures import ThreadPoolExecutor
 import logging
-import datetime
 
 # Configure logging
-log_file = "insertion_log4.txt"  # Specify your log file
+log_file = "insertion_log6.txt"  # Specify your log file
 logging.basicConfig(filename=log_file, level=logging.INFO,  # Set logging level
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -19,7 +18,7 @@ def insert_with_autocommit(data, table_name, cnx): # pass the connection object.
         values = ", ".join([f"%({key})s" for key in data.keys()])
         query = f"INSERT INTO {table_name} ({columns}) VALUES ({values})"
         cursor.execute(query, data)
-        #logging.info(f"Inserted into {table_name}: {data}")
+        logging.info(f"Inserted into {table_name}: {data}")
     except mysql.connector.IntegrityError as e: # catch integrity error.
         logging.error(f"Integrity Error inserting into {table_name}: {e} Data: {data}")
         return False # return false if it fails.
@@ -98,7 +97,7 @@ def process_json_file(filepath):
                         # or
                         # return  # Skip processing the rest of the match
                 insert_with_autocommit(match, "match_details", mydb)
-                #print("completed insert of match details",matchID)
+                print("completed insert of match details",matchID)
 
                 # ✅ Insert `officials`
                 for off in d.get('officials', {}): 
@@ -152,29 +151,6 @@ def process_json_file(filepath):
             mydb.close()
 
 
-def process_all_json_files_parallel(matches_path, formats, num_workers=50):
-    """ Process JSON files in parallel using ThreadPoolExecutor. """
-    all_files = []
-
-    current_time = datetime.datetime.now()
-    print("Started at - ",current_time.strftime("%Y-%m-%d %H:%M:%S"))
-
-    for format_name in formats:
-        format_path = os.path.join(matches_path, format_name)
-        if os.path.isdir(format_path):
-            files = [os.path.join(format_path, file) for file in os.listdir(format_path) if file.endswith(".json")]
-            all_files.extend(files)
-    print("Inside process_all_json_files_parallel")
-
-    # ✅ Process files in parallel (limit to `num_workers` threads)
-    with ThreadPoolExecutor(max_workers=num_workers) as executor:
-        results = list(executor.map(process_json_file, all_files))
-
-    print(f"✅ Processed {len([r for r in results if r is not None])} matches successfully!")
-    current_time = datetime.datetime.now()
-    print("Ended at - ",current_time.strftime("%Y-%m-%d %H:%M:%S"))
 
 # Example Usage:
-matches_path = "matches"
-formats = ["odis_json", "t20s_json", "tests_json"]
-process_all_json_files_parallel(matches_path, formats, num_workers=50)
+print("Processed this file:- ",process_json_file('matches\\tests_json\\352662.json'))
